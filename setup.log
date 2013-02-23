@@ -1,0 +1,42 @@
+
+============== System information ====
++ lsb_release -a
+No LSB modules are available.
+Distributor ID:	Ubuntu
+Description:	Ubuntu 12.04.1 LTS
+Release:	12.04
+Codename:	precise
++ uname -a
+Linux ip-10-108-30-136 3.2.0-31-virtual #50-Ubuntu SMP Fri Sep 7 16:36:36 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
++ sw_vers
+./setup.sh: line 21: sw_vers: command not found
++ system_profiler
+./setup.sh: line 22: system_profiler: command not found
++ grep MemTotal /proc/meminfo
+MemTotal:        7629500 kB
++ echo
+
++ echo
+
++ bin/cpanm -v --notest -l extlib/ --installdeps .
+./setup.sh: line 33: bin/cpanm: Permission denied
++ bin/cpanm -v --notest -l extlib/ --installdeps .
+./setup.sh: line 34: bin/cpanm: Permission denied
++ set -e
++ bin/cpanm -v --notest -l extlib/ --installdeps .
+./setup.sh: line 36: bin/cpanm: Permission denied
++ rm -rf sample_data/json/volvox
++ bin/prepare-refseqs.pl --fasta docs/tutorial/data_files/volvox.fa --out sample_data/json/volvox
+./setup.sh: line 45: bin/prepare-refseqs.pl: Permission denied
++ cd src/wig2png
++ ./configure
+./setup.sh: line 74: ./configure: Permission denied
++ cd ../..
++ set -x
++ bin/wig-to-json.pl --wig docs/tutorial/data_files/volvox_microarray.wig --out sample_data/json/volvox
+./setup.sh: line 78: bin/wig-to-json.pl: Permission denied
+Can't locate local/lib.pm in @INC (@INC contains: extlib/lib/perl5 /etc/perl /usr/local/lib/perl/5.14.2 /usr/local/share/perl/5.14.2 /usr/lib/perl5 /usr/share/perl5 /usr/lib/perl/5.14 /usr/share/perl/5.14 /usr/local/lib/site_perl .).
+BEGIN failed--compilation aborted.
++ '[' '!' -e samtools ']'
++ svn export https://samtools.svn.sourceforge.net/svnroot/samtools/trunk/samtools
+./setup.sh: line 95: svn: command not found
