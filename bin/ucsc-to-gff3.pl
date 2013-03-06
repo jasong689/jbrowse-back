@@ -28,7 +28,7 @@ options:
 example:
 
 	ucsc-to-gff3.pl --in path/to/hg19/database --primaryTable knownGene --secondaryTable kgXref --link name kgID
-	    --getSubfeatures
+	    --primaryName kgID --getSubfeatures
 =cut
 
 
