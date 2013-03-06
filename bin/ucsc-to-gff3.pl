@@ -23,10 +23,12 @@ options:
 	--secondaryTable <tableName> : data from a secondary table to be included with the primary table (must be used with --link)
 	--link <primaryTable field> <secondaryTable field> : field names from tables to match
 	--getSubfeatures : creates subfeatures eg. exon and cds
+	--primaryName <fieldName> : switches the name field of the primary table with specified field name
 	
 example:
 
-	ucsc-to-gff3.pl --in path/to/hg19/database --primaryTable knownGene --secondaryTable kgXref --link name kgID --getSubfeatures
+	ucsc-to-gff3.pl --in path/to/hg19/database --primaryTable knownGene --secondaryTable kgXref --link name kgID
+	    --getSubfeatures
 =cut
 
 
@@ -108,9 +110,13 @@ foreach my $row (@$primData) {
         my $matchData = selectall($indir . "/" . $secondaryTable, sub{$_[0]->[$matchIndex] eq $rowData->{$link[0]}});
         foreach my $linkRow (@$matchData) {
             my $matchRow = arrayref2hash($linkRow, \%secFields);
+	    #switches name attribute with primary name if it exists in the secondary table
+	    #else switches with primary name found in the primary table below
+	    ($rowData->{name},$matchRow->{$primaryName}) = ($matchRow->{$primaryName},$rowData->{name}) if $matchRow->{$primaryName};
             $gffAttr{$_} = $matchRow->{$_} foreach keys %$matchRow;
         }
     }
+    ($rowData->{name},$rowData->{$primaryName}) = ($rowData->{$primaryName},$rowData->{name}) if $matchRow->{$primaryName};
     #adds primary table data to gff hash ref
     my $gffHashRef = {
 		    seq_id => $rowData->{chrom},
