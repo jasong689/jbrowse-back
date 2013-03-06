@@ -111,12 +111,15 @@ foreach my $row (@$primData) {
         foreach my $linkRow (@$matchData) {
             my $matchRow = arrayref2hash($linkRow, \%secFields);
 	    #switches name attribute with primary name if it exists in the secondary table
-	    #else switches with primary name found in the primary table below
-	    ($rowData->{name},$matchRow->{$primaryName}) = ($matchRow->{$primaryName},$rowData->{name}) if $matchRow->{$primaryName};
+	    #else switches with primary name found in the primary table
+	    if ($matchRow->{$primaryName}) {
+		($rowData->{name},$matchRow->{$primaryName}) = ($matchRow->{$primaryName},$rowData->{name});
+	    } else {
+		($rowData->{name},$rowData->{$primaryName}) = ($rowData->{$primaryName},$rowData->{name});
+	    }
             $gffAttr{$_} = $matchRow->{$_} foreach keys %$matchRow;
         }
     }
-    ($rowData->{name},$rowData->{$primaryName}) = ($rowData->{$primaryName},$rowData->{name}) if $matchRow->{$primaryName};
     #adds primary table data to gff hash ref
     my $gffHashRef = {
 		    seq_id => $rowData->{chrom},
