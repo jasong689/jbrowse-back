@@ -97,13 +97,18 @@ foreach my $row (@$primData) {
 		    strand => $rowData->{strand},
 		    phase => $rowData->{phase} || ".",
     };
+    
+    #writes the left over fields as attributes
     $gffAttr{$_} = $rowData->{$_} foreach @leftOver;
     $gffHashRef->{attributes} = \%gffAttr;
     print $gff3 gff3_format_feature($gffHashRef);
+    
     #retrieves subfeatures eg exons and cds
     if ($subfeatures) {
 	my @getSub = ("cds","exon");
 	foreach (@getSub) {
+	    #some fields have start other have starts
+	    #not the best way to go about doing this but it works
 	    next unless $rowData->{$_ . "Starts"} || $rowData->{$_ . "Start"};
 	    my @start = split /,/, $rowData->{$_ . "Starts"} || $rowData->{$_ . "Start"};
 	    my @end = split /,/, $rowData->{$_ . "Ends"} || $rowData->{$_ . "End"};
@@ -129,6 +134,8 @@ foreach my $row (@$primData) {
 }
 close $gff3 or die "Could not close $primaryTable.gff3";
 
+#Reusing some of Robs subroutines to make parsing the sql and txt.gz
+#files easier
 
 # subroutine to crudely parse a .txt.gz table dump, and, for each row,
 # apply a given subroutine to a array ref that holds the values for the
