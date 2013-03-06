@@ -1,19 +1,19 @@
 use Getopt::Long;
 use Bio::GFF3::LowLevel qw/ gff3_format_feature /;
-use List::MoreUtils;
 use PerlIO::gzip;
 use IO::Handle;
 
 use strict;
 use warnings;
 
-my ($primaryTable,$secondaryTable,$indir);
+my ($primaryTable,$secondaryTable);
 my $trackdb = "trackDb";
 my $primaryName = 'name';
 my $out = '';
 my @link;
-my $count = 0;
-my $verbose = 0;
+my $verbose = '';
+my $indir = ".";
+my $subfeatures = '';
 
 GetOptions('primaryTable=s' => \$primaryTable,
            'secondaryTable=s' => \$secondaryTable,
@@ -21,7 +21,8 @@ GetOptions('primaryTable=s' => \$primaryTable,
            'primaryName=s' => \$primaryName,
            'out=s' => \$out,
            'verbose' => \$verbose,
-	   'dir=s' => \$indir);
+	   'dir=s' => \$indir,
+	   'getSubfeatures' => \$subfeatures);
 
 my %typeMaps =
     (
@@ -31,7 +32,10 @@ my %typeMaps =
             ["chromStart", "chromEnd", "strand", "name", "score", "itemRgb"]
         );
 
-#only checks is the primary table is contained in trackDb since secondary table does not have to contain track data
+$primaryTable or die "--primaryTable is required to run this script";
+
+#only checks is the primary table is contained in trackDb since secondary table
+#does not have to contain track data
 my %trackColNames = name2column_map($indir . "/" . $trackdb);
 my $tableCol = $trackColNames{tableName};
 my $primRow = selectall($indir . "/" . $trackdb, sub {$_[0]->[$tableCol] eq $primaryTable});
@@ -54,10 +58,14 @@ my %primFields = name2column_map($indir . "/" . $primaryTable);
 my $primData = selectall($primaryTable, sub {$_});
 
 #retrieves the index number of the linking field in the secondary table
+#and checks if sql and txt.gz files exist
 my (%secFields,$matchIndex);
 if ($secondaryTable) {
+    unless( -f "$indir/$secondaryTable.sql" && -f "$indir/$secondaryTable.txt.gz" ) {
+	die "To format the $secondaryTable track, you must have both files $indir/$secondaryTable.sql and $indir/$secondaryTable.txt.gz\n";
+    }
     %secFields = name2column_map($indir . "/" . $secondaryTable);
-    $matchIndex = $secFields{$link[1]};
+    $matchIndex = $secFields{$link[1]} or die "--link is required if --secondaryTable is used";
 }
 
 #checks for left over fields to be written as attributes
@@ -71,6 +79,7 @@ foreach my $row (@$primData) {
     my $rowData = arrayref2hash($row, \%primFields);
     my %gffAttr;
     #writes attributes hash ref from the secondary table if it is specified
+    #selects rows which have matching data
     if ($secondaryTable) {
         my $matchData = selectall($indir . "/" . $secondaryTable, sub{$_[0]->[$matchIndex] eq $rowData->{$link[0]}});
         foreach my $linkRow (@$matchData) {
@@ -91,8 +100,34 @@ foreach my $row (@$primData) {
     $gffAttr{$_} = $rowData->{$_} foreach @leftOver;
     $gffHashRef->{attributes} = \%gffAttr;
     print $gff3 gff3_format_feature($gffHashRef);
+    #retrieves subfeatures eg exons and cds
+    if ($subfeatures) {
+	my @getSub = ("cds","exon");
+	foreach (@getSub) {
+	    next unless $rowData->{$_ . "Starts"} || $rowData->{$_ . "Start"};
+	    my @start = split /,/, $rowData->{$_ . "Starts"} || $rowData->{$_ . "Start"};
+	    my @end = split /,/, $rowData->{$_ . "Ends"} || $rowData->{$_ . "End"};
+	    my $subHashRef;
+	    for (my $i=0;$i < scalar @start;$i++) {
+		$subHashRef = {
+		    seq_id => $rowData->{chrom},
+		    source => $rowData->{source} || ".",
+		    type => $_,
+		    start => $start[$i],
+		    end => $end[$i],
+		    score => ".",
+		    strand => $rowData->{strand},
+		    phase => $rowData->{phase} || ".",
+		    attributes => {
+			Parent => $rowData->{name}
+		    }
+		};
+	    print $gff3 gff3_format_feature($subHashRef);
+	    }
+	}
+    }
 }
-close $gff3;
+close $gff3 or die "Could not close $primaryTable.gff3";
 
 
 # subroutine to crudely parse a .txt.gz table dump, and, for each row,
