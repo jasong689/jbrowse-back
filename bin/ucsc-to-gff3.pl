@@ -28,18 +28,18 @@ options:
 example:
 
 	ucsc-to-gff3.pl --in path/to/hg19/database --primaryTable knownGene --secondaryTable kgXref --link name kgID
-	    --primaryName kgID --getSubfeatures
+	    --getSubfeatures
 =cut
 
 
-my ($primaryTable,$secondaryTable);
+my ($primaryTable,$secondaryTable,@link);
 my $trackdb = "trackDb";
 my $primaryName = 'name';
 my $out = '.';
-my @link;
 my $verbose = '';
 my $indir = ".";
 my $subfeatures = '';
+my $count = 0;
 
 GetOptions('primaryTable=s' => \$primaryTable,
            'secondaryTable=s' => \$secondaryTable,
@@ -100,6 +100,8 @@ push (@gff3Required, ($typeMaps{$type}->[0],$typeMaps{$type}->[1]));
 my @leftOver = grep {not $_ ~~ @gff3Required} keys %primFields;
 
 open my $gff3, ">$out/$primaryTable.gff3" or die "Could not create $out/$primaryTable.gff3";
+
+print $gff3 "##gff-version 3";
 
 foreach my $row (@$primData) {
     my $rowData = arrayref2hash($row, \%primFields);
@@ -165,6 +167,7 @@ foreach my $row (@$primData) {
 	    }
 	}
     }
+    if (++$count % 10000 == 0) { warn "(processed $count lines)\n" }
 }
 close $gff3 or die "Could not close $out/$primaryTable.gff3";
 
@@ -199,7 +202,6 @@ sub for_columns {
 	    &$func (\@data);
 	    $row = "";
 	}
-	if (++$lines % 100000 == 0) { warn "(processed $lines lines)\n" }
     }
     $gzip->close()
         or die "couldn't close $table.txt.gz: $!\n";
