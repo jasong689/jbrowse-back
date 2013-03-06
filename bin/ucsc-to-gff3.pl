@@ -9,7 +9,7 @@ use warnings;
 my ($primaryTable,$secondaryTable);
 my $trackdb = "trackDb";
 my $primaryName = 'name';
-my $out = '';
+my $out = '.';
 my @link;
 my $verbose = '';
 my $indir = ".";
@@ -73,12 +73,12 @@ my @gff3Required = ("chrom","source","type","score","strand","phase");
 push (@gff3Required, ($typeMaps{$type}->[0],$typeMaps{$type}->[1]));
 my @leftOver = grep {not $_ ~~ @gff3Required} keys %primFields;
 
-open my $gff3, ">$primaryTable.gff3" or die "$! could not create $primaryTable.gff3";
+open my $gff3, ">$out/$primaryTable.gff3" or die "Could not create $out/$primaryTable.gff3";
 
 foreach my $row (@$primData) {
     my $rowData = arrayref2hash($row, \%primFields);
     my %gffAttr;
-    #writes attributes hash ref from the secondary table if it is specified
+    #adds attributes to hash ref from the secondary table if it is specified
     #selects rows which have matching data
     if ($secondaryTable) {
         my $matchData = selectall($indir . "/" . $secondaryTable, sub{$_[0]->[$matchIndex] eq $rowData->{$link[0]}});
@@ -87,6 +87,7 @@ foreach my $row (@$primData) {
             $gffAttr{$_} = $matchRow->{$_} foreach keys %$matchRow;
         }
     }
+    #adds primary table data to gff hash ref
     my $gffHashRef = {
 		    seq_id => $rowData->{chrom},
 		    source => $rowData->{source} || ".",
@@ -132,7 +133,7 @@ foreach my $row (@$primData) {
 	}
     }
 }
-close $gff3 or die "Could not close $primaryTable.gff3";
+close $gff3 or die "Could not close $out/$primaryTable.gff3";
 
 #Reusing some of Robs subroutines to make parsing the sql and txt.gz
 #files easier
