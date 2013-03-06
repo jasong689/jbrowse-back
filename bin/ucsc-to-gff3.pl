@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 use Getopt::Long;
 use Bio::GFF3::LowLevel qw/ gff3_format_feature /;
 use PerlIO::gzip;
@@ -5,6 +6,29 @@ use IO::Handle;
 
 use strict;
 use warnings;
+
+=usage
+
+ucsc-to-json.pl
+
+Uses uscsc data dumps and converts them into a GFF3 file.
+Can be used to include data from two tables based on some condition, however primary table
+must contain track data. Secondary table does not need to be found in trackDb.
+
+options:
+
+	--primaryTable <tableName> : must be included is the primary table containing track data
+	--dir <dir> : directory where uscsc data dumps are located (default is current directory)
+	--out <dir> : output directory where GFF3 file will be created (default is current directory)
+	--secondaryTable <tableName> : data from a secondary table to be included with the primary table (must be used with --link)
+	--link <primaryTable field> <secondaryTable field> : field names from tables to match
+	--getSubfeatures : creates subfeatures eg. exon and cds
+	
+example:
+
+	ucsc-to-gff3.pl --in path/to/hg19/database --primaryTable knownGene --secondaryTable kgXref --link name kgID --getSubfeatures
+=cut
+
 
 my ($primaryTable,$secondaryTable);
 my $trackdb = "trackDb";
